@@ -57,6 +57,25 @@ def cotizacion(
         "porcentaje_repuesto": round(requiere_repuesto * 100 / len(seleccion), 1),
     }
 
+
+# app/materias.py — también ANTES de la ruta /{codigo}
+
+
+@router.get("/avance")
+def avance(ejecutados: Annotated[list[str] | None, Query()] = None) -> dict:
+    codigos = {c.upper() for c in (ejecutados  or [])}
+    total = ejecutadas = 0
+    pendientes = []
+    for servicio in SERVICIOS:
+        total += servicio["costo"]
+        if servicio["codigo"] in codigos:
+            ejecutadas += servicio["costo"]
+        elif servicio["requiere_repuesto"]:
+            pendientes.append(servicio["codigo"])
+    return {"porcentaje_avance": round(ejecutadas * 100 / total, 1),
+            "costo_aprobados": ejecutadas, "requiere_repuesto_pendientes": pendientes}
+
+
 @router.post("", response_model=Servicio, status_code=status.HTTP_201_CREATED)
 def crear_servicio(nueva: ServicioCrear) -> dict:
     if any(m["codigo"] == nueva.codigo for m in SERVICIOS):
