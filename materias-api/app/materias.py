@@ -37,6 +37,25 @@ def listar_servicios(
         resultado = [m for m in resultado if m["requiere_repuesto"]]
     return resultado
 
+@router.get("/cotizacion")
+def cotizacion(
+    complejidad: Annotated[int | None, Query(ge=1, le=10)] = None) -> dict:
+    seleccion = [m for m in SERVICIOS if complejidad is None or m["complejidad"] == complejidad]
+    if not seleccion:
+        raise HTTPException(404, f"Es complejo {complejidad}")
+    
+    servicios = sum(m["costo"] for m in seleccion)
+    descuento_aplicado = 45*0.18
+    costo = sum(m["costo"] for m in seleccion)
+    requiere_repuesto = sum(1 for m in seleccion if m["requiere_repuesto"])
+
+    return {
+        "servicio": servicios,
+        "descuento_aplicado": descuento_aplicado,
+        "costo_totales": costo,
+        "promedio_costo": round(costo / len(seleccion), 2),
+        "porcentaje_repuesto": round(requiere_repuesto * 100 / len(seleccion), 1),
+    }
 
 @router.post("", response_model=Servicio, status_code=status.HTTP_201_CREATED)
 def crear_servicio(nueva: ServicioCrear) -> dict:
